@@ -19,7 +19,7 @@ test('configPath: is AM_HOME/config.json', () => {
 });
 
 test('readConfig: returns the defaults when the file does not exist', () => {
-  assert.deepEqual(readConfig(env).values, { open: true, theme: 'auto', mode: 'auto', style: '80', voice: 'auto', update_check: true, close_after_reply: false, colophon: true, pages_dir: '', scale: 1 });
+  assert.deepEqual(readConfig(env).values, { open: true, theme: 'auto', mode: 'auto', style: '80', voice: 'auto', update_check: true, close_after_reply: false, colophon: true, pages_dir: '', scale: 1, doc_width: 916 });
 });
 
 test('setConfig: booleans accept on/off/true/false/`开`/`关` and are written to the file', () => {
@@ -51,7 +51,7 @@ test('resetConfig: resets one key or all keys to the defaults', () => {
   setConfig('open', 'off', env);
   setConfig('theme', 'shadcn', env);
   resetConfig('open', env);
-  assert.deepEqual(readConfig(env).values, { open: true, theme: 'shadcn', mode: 'auto', style: '80', voice: 'auto', update_check: true, close_after_reply: false, colophon: true, pages_dir: '', scale: 1 });
+  assert.deepEqual(readConfig(env).values, { open: true, theme: 'shadcn', mode: 'auto', style: '80', voice: 'auto', update_check: true, close_after_reply: false, colophon: true, pages_dir: '', scale: 1, doc_width: 916 });
   resetConfig(undefined, env);
   assert.equal(existsSync(configPath(env)), false);
 });
@@ -65,7 +65,7 @@ test('readConfig: falls back to the defaults with a warning when the file is bro
 
 test('readConfig: ignores unknown keys and invalid values', () => {
   writeFileSync(configPath(env), JSON.stringify({ open: 'yes-ish', theme: 'shadcn', extra: 1 }));
-  assert.deepEqual(readConfig(env).values, { open: true, theme: 'shadcn', mode: 'auto', style: '80', voice: 'auto', update_check: true, close_after_reply: false, colophon: true, pages_dir: '', scale: 1 });
+  assert.deepEqual(readConfig(env).values, { open: true, theme: 'shadcn', mode: 'auto', style: '80', voice: 'auto', update_check: true, close_after_reply: false, colophon: true, pages_dir: '', scale: 1, doc_width: 916 });
 });
 
 test('scale: a number from 0.8 to 1.5 in steps of 0.05, stored as a number', () => {
@@ -80,6 +80,27 @@ test('scale: a number from 0.8 to 1.5 in steps of 0.05, stored as a number', () 
   }
   resetConfig('scale', env);
   assert.equal(readConfig(env).values.scale, 1);
+});
+
+test('doc_width: a number from 640 to 1680 in steps of 4, stored as a number', () => {
+  assert.equal(CONFIG_KEYS.doc_width.type, 'number');
+  assert.equal(CONFIG_KEYS.doc_width.default, 916);
+  assert.equal(readConfig(env).values.doc_width, 916);
+  setConfig('doc_width', '1680', env);
+  assert.equal(readConfig(env).values.doc_width, 1680);
+  assert.equal(typeof JSON.parse(readFileSync(configPath(env), 'utf8')).doc_width, 'number');
+  for (const bad of ['600', '2000', 'wide', '917']) {
+    assert.throws(() => setConfig('doc_width', bad, env), (e) => e instanceof ConfigError && /640/.test(e.message) && /1680/.test(e.message) && /4/.test(e.message), bad);
+  }
+  resetConfig('doc_width', env);
+  assert.equal(readConfig(env).values.doc_width, 916);
+});
+
+test('doc_width: an invalid stored value falls back to the default', () => {
+  writeFileSync(configPath(env), JSON.stringify({ doc_width: 917 }));
+  assert.equal(readConfig(env).values.doc_width, 916);
+  writeFileSync(configPath(env), JSON.stringify({ doc_width: '1200' }));
+  assert.equal(readConfig(env).values.doc_width, 1200);
 });
 
 test('scale: an invalid stored value falls back to 1', () => {

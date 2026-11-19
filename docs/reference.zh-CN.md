@@ -344,6 +344,7 @@ am export page.html --pdf page.pdf --png out/
 - 亮色和暗色都要写全所有颜色变量。`am help theme` 会列出这些变量，并给出完整格式。
 - 字体只能写本机已安装的字体。系统会自动加上默认字体作为回退，没装这些字体的读者也能正常阅读。
 - `css` 里每条选择器都以 `&` 开头。`&` 代表主题的根节点，这样这些规则只在这个主题下生效。
+- `doc` 模板的阅读宽度跟随 `doc_width` 设置；`.am-doc` 读取 `var(--am-doc-max, 916px)`。
 - 页面字号跟随读者的 `scale` 设置。用 `var(--am-fs-*)`（页面文字尺寸）或 `calc(Npx * var(--am-scale, 1))`；工具栏保持自己的大小。
 - `font`（可选）写本工具自带的字体名。每个带上这个主题的页面都会内嵌该字体，读者在工具栏切换过去就能看到，不需要联网；没有带这类主题的页面不会变大。目前只有 `bangers`（[Bangers](https://github.com/googlefonts/bangers)，SIL OFL 1.1）；在 `css` 里使用它的字体族，例如 `& .am-head h1 { font-family: "Bangers", Impact, sans-serif; }`。不认识这个字段的旧版本会忽略它，显示回退字体。视频页面不内嵌这个字体。
 - `requires`（可选）写主题支持的最低版本，格式 `x.y.z`。版本更低时，这个主题会被跳过，并提示 `needs Answer me with HTML x.y.z or newer`；不认识这个字段的旧版本会忽略它。
@@ -461,6 +462,7 @@ am serve --tailscale  # 只监听 Tailscale 地址；tailnet 内的任何设备�
 | `mode` | `auto` | 默认明暗：`auto`、`light` 或 `dark` |
 | `style` | `80` | 写作检查：`off`、`80`（只提醒）或 `strict`（不达标不生成） |
 | `scale` | `1` | 页面文字大小：0.8–1.5，步长 0.05。1.2 表示放大 20%；图表跟着变大。工具栏的 A− / A+ 也能调整；选择会记在这个浏览器里，并优先于这个设置，但在 `am serve` 下只在当前标签页内有效 |
+| `doc_width` | `916` | `doc` 模板的阅读宽度，单位 px：640–1680，步长 4。`1680` 和 `sheet` 模板一样宽。只影响 `doc` 模板；`sheet` 的面板按窗口排布。页面会记住生成时的宽度，所以 `am patch` 不会让旧页面重新排版 |
 | `pages_dir` | 空 | 生成页面的输出目录。留空表示数据目录下的 `pages/`；开头的 `~` 表示你的主目录，相对路径按数据目录解析。`am render`、`am theme check`、`--replace` 和 `am serve` 都会跟随它。`am clean` 只删除它生成的 `<slug>-<stamp>.html` 文件，你放在该目录里的其他文件不会被删 |
 | `update_check` | `on` | 每天向 GitHub 查一次新版本并提醒你，不会自己更新 |
 | `close_after_reply` | `off` | 复制回复后 3 秒关闭页面标签页，带倒计时和「保持打开」按钮。见下方说明 |

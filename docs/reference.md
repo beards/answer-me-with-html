@@ -344,6 +344,7 @@ Put one JSON file per theme in `~/.answer-me-with-html/themes/`. The file name i
 - Light and dark must each set every color variable. `am help theme` lists them and shows the whole format.
 - Name installed fonts only. The default fonts are added as the fallback, so a reader without your fonts still gets readable text.
 - In `css`, start every selector with `&`. It stands for the theme's root, so the rules apply only under this theme.
+- The `doc` template's reading width follows the `doc_width` setting; `.am-doc` reads `var(--am-doc-max, 916px)`.
 - Page font sizes follow the reader's `scale` setting. Use `var(--am-fs-*)` (the page text sizes) or `calc(Npx * var(--am-scale, 1))`; the toolbar keeps its size.
 - `font` (optional) names a font this tool ships. Every page that carries the theme embeds it, so a reader can switch to the theme and sees its font with no network; a page that carries no theme naming a font does not grow. The only value for now is `bangers` ([Bangers](https://github.com/googlefonts/bangers), SIL OFL 1.1); use the family in `css`, for example `& .am-head h1 { font-family: "Bangers", Impact, sans-serif; }`. A version that does not know the field ignores it and shows the fallback font. Video pages do not embed the font.
 - `requires` (optional) is the oldest version of this tool the theme supports, as `x.y.z`. On an older version the theme is skipped with `needs Answer me with HTML x.y.z or newer`; a version that does not know the field ignores it.
@@ -461,6 +462,7 @@ am serve --tailscale  # listen on your Tailscale address only; open the links fr
 | `mode` | `auto` | Default color mode: `auto`, `light` or `dark` |
 | `style` | `80` | Writing check: `off`, `80` (warn only) or `strict` (refuse to render) |
 | `scale` | `1` | Text size on the page: 0.8–1.5 in steps of 0.05. 1.2 makes text 20% larger; diagrams and charts grow with it. The toolbar's A− / A+ buttons change it too; the choice is remembered in this browser and wins over this setting, but under `am serve` it lasts for the tab only |
+| `doc_width` | `916` | Reading width of the `doc` template in px: 640–1680 in steps of 4. `1680` is as wide as the `sheet` template. It applies to the `doc` template only; `sheet` sizes its panels to the window. A page keeps the width it was made with, so `am patch` does not reflow an older page |
 | `pages_dir` | empty | Folder for generated pages. Empty means `pages/` in the data directory; a leading `~` is your home folder, and a relative path is inside the data directory. `am render`, `am theme check`, `--replace` and `am serve` all follow it. `am clean` deletes only the `<slug>-<stamp>.html` files it generated there, so other files in your folder stay |
 | `update_check` | `on` | Check GitHub for a new version once a day and mention it. Never updates by itself |
 | `close_after_reply` | `off` | Close the page tab 3 seconds after you copy the reply, with a countdown and a Keep open button. See the note below |

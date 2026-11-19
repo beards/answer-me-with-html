@@ -6,6 +6,7 @@ import { BASE_CSS, TABLE_CSS, DIFF_CSS, DELTA_CSS, RTL_CSS, CHART_CSS, MATH_CSS,
 import { themes } from './registry.js';
 import { fontLanguages, langSelector } from './fonts.js';
 import { typeScaleCss } from './type-scale.js';
+import { DOC_WIDTH } from './doc-width.js';
 
 const block = (selector, vars) =>
   `${selector} {\n${Object.entries(vars).map(([k, v]) => `  ${k}: ${v};`).join('\n')}\n}`;
@@ -45,11 +46,13 @@ const ownLanguageFont = (t) => fontLanguages().map((l) => block(langSelector(l, 
 // shipped font (`font`) brings its face, one copy per font, so the picker can switch to it; a page that carries no such theme stays
 // as small as before. A video page turns fonts off, because its player never switches theme.
 // scale: the reader's text size. It sets --am-scale after the type scale (src/themes/type-scale.js), which every page size multiplies; 1 adds nothing.
-export function pageCss(list = themes('page'), { diff = false, delta = false, rtl = false, math = false, chart = false, table = false, update = false, closeAfter = false, fonts = true, scale = 1 } = {}) {
+// docWidth: the reading width of the doc template (src/themes/doc-width.js). It sets --am-doc-max, which .am-doc reads; the default adds nothing,
+// so a page rendered without the setting keeps the bytes it had before the setting existed.
+export function pageCss(list = themes('page'), { diff = false, delta = false, rtl = false, math = false, chart = false, table = false, update = false, closeAfter = false, fonts = true, scale = 1, docWidth = DOC_WIDTH.default } = {}) {
   const decorations = list.filter((t) => t.css).map((t) => scoped(t.css, pageSel(t)));
   const fontFaces = fonts ? [...new Set(list.map((t) => t.font).filter((f) => f && FONT_CSS[f]))].map((f) => FONT_CSS[f]) : [];
   const ownFonts = list.filter((t) => t.ownFont).flatMap(ownLanguageFont);
-  return [list.map((t) => tokenCss(pageSel(t), t.tokens, t.mode)).join('\n\n'), ...languageFontCss(), ...ownFonts, typeScaleCss(), ...(scale === 1 ? [] : [`html { --am-scale: ${scale}; }`]), BASE_CSS, ...(math ? [MATH_CSS] : []), ...(chart ? [CHART_CSS] : []), ...(table ? [TABLE_CSS] : []), ...(diff ? [DIFF_CSS] : []), ...(delta ? [DELTA_CSS] : []), ...(update ? [UPDATE_CSS] : []), ...(closeAfter ? [CLOSE_AFTER_CSS] : []), ...(rtl ? [RTL_CSS] : []), ...fontFaces, ...decorations].join('\n\n');
+  return [list.map((t) => tokenCss(pageSel(t), t.tokens, t.mode)).join('\n\n'), ...languageFontCss(), ...ownFonts, typeScaleCss(), ...(scale === 1 ? [] : [`html { --am-scale: ${scale}; }`]), ...(docWidth === DOC_WIDTH.default ? [] : [`html { --am-doc-max: ${docWidth}px; }`]), BASE_CSS, ...(math ? [MATH_CSS] : []), ...(chart ? [CHART_CSS] : []), ...(table ? [TABLE_CSS] : []), ...(diff ? [DIFF_CSS] : []), ...(delta ? [DELTA_CSS] : []), ...(update ? [UPDATE_CSS] : []), ...(closeAfter ? [CLOSE_AFTER_CSS] : []), ...(rtl ? [RTL_CSS] : []), ...fontFaces, ...decorations].join('\n\n');
 }
 
 // list: the video themes the player carries (default: the built-in ones). rtl: the video language is written right to left; the page

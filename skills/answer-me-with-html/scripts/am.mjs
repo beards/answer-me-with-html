@@ -577,7 +577,7 @@ body.am-has-reply-bar { padding-block-end: 72px; }
 }
 
 /* \u2500\u2500 doc template \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
-.am-doc { max-width: 916px; margin: 0 auto; padding: 40px 28px 64px; }
+.am-doc { max-width: var(--am-doc-max, 916px); margin: 0 auto; padding: 40px 28px 64px; }
 .am-doc-layout { position: relative; }
 /* The outline rail: a zero-height sticky strip whose child hangs 8px outside the body on the chosen side. "start" and "end" are
    logical, so the rail mirrors on a right-to-left page. data-flow says which way the label and the list open: "out" away from the
@@ -10044,6 +10044,13 @@ ${panels.map((p) => panelHtml(p, { grid: false })).join("\n")}
 // src/templates/index.js
 var TEMPLATES = { sheet, doc };
 
+// src/themes/doc-width.js
+var DOC_WIDTH = Object.freeze({ min: 640, max: 1680, step: 4, default: 916 });
+function readDocWidth(raw) {
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= DOC_WIDTH.min && n <= DOC_WIDTH.max ? n : DOC_WIDTH.default;
+}
+
 // src/themes/index.js
 var block = (selector, vars) => `${selector} {
 ${Object.entries(vars).map(([k, v]) => `  ${k}: ${v};`).join("\n")}
@@ -10067,11 +10074,11 @@ var videoSel = (t) => `html[data-video][data-theme="${t.name}"]`;
 var scoped = (css, sel) => css.replace(/&/g, sel);
 var languageFontCss = () => fontLanguages().map((l3) => block(langSelector(l3, "html", "[data-theme][data-mode]"), { "--font-sans": l3.fonts.sans }));
 var ownLanguageFont = (t) => fontLanguages().map((l3) => block(langSelector(l3, "html", `[data-theme="${t.name}"][data-mode]`), { "--font-sans": t.tokens.common["--font-sans"] }));
-function pageCss(list2 = themes("page"), { diff = false, delta = false, rtl = false, math: math2 = false, chart = false, table = false, update: update2 = false, closeAfter = false, fonts = true, scale = 1 } = {}) {
+function pageCss(list2 = themes("page"), { diff = false, delta = false, rtl = false, math: math2 = false, chart = false, table = false, update: update2 = false, closeAfter = false, fonts = true, scale = 1, docWidth = DOC_WIDTH.default } = {}) {
   const decorations = list2.filter((t) => t.css).map((t) => scoped(t.css, pageSel(t)));
   const fontFaces = fonts ? [...new Set(list2.map((t) => t.font).filter((f2) => f2 && FONT_CSS[f2]))].map((f2) => FONT_CSS[f2]) : [];
   const ownFonts = list2.filter((t) => t.ownFont).flatMap(ownLanguageFont);
-  return [list2.map((t) => tokenCss(pageSel(t), t.tokens, t.mode)).join("\n\n"), ...languageFontCss(), ...ownFonts, typeScaleCss(), ...scale === 1 ? [] : [`html { --am-scale: ${scale}; }`], BASE_CSS, ...math2 ? [MATH_CSS] : [], ...chart ? [CHART_CSS] : [], ...table ? [TABLE_CSS] : [], ...diff ? [DIFF_CSS] : [], ...delta ? [DELTA_CSS] : [], ...update2 ? [UPDATE_CSS] : [], ...closeAfter ? [CLOSE_AFTER_CSS] : [], ...rtl ? [RTL_CSS] : [], ...fontFaces, ...decorations].join("\n\n");
+  return [list2.map((t) => tokenCss(pageSel(t), t.tokens, t.mode)).join("\n\n"), ...languageFontCss(), ...ownFonts, typeScaleCss(), ...scale === 1 ? [] : [`html { --am-scale: ${scale}; }`], ...docWidth === DOC_WIDTH.default ? [] : [`html { --am-doc-max: ${docWidth}px; }`], BASE_CSS, ...math2 ? [MATH_CSS] : [], ...chart ? [CHART_CSS] : [], ...table ? [TABLE_CSS] : [], ...diff ? [DIFF_CSS] : [], ...delta ? [DELTA_CSS] : [], ...update2 ? [UPDATE_CSS] : [], ...closeAfter ? [CLOSE_AFTER_CSS] : [], ...rtl ? [RTL_CSS] : [], ...fontFaces, ...decorations].join("\n\n");
 }
 function videoCss(list2 = themes("video"), { diff = false, delta = false, rtl = false, chart = false } = {}) {
   const parts = list2.filter((t) => t.video).flatMap((t) => [
@@ -10313,8 +10320,8 @@ function checkUnit(text2, line, kind2, out, family) {
 var SOURCE_OPEN = '<textarea id="am-source"';
 var SOURCE_RE = new RegExp(`^${SOURCE_OPEN}[^>]*>([\\s\\S]*?)<\\/textarea>`);
 var AUDIO_OPEN = '<audio id="amv-audio"';
-function rootTag({ lang, dir, theme, mode, style, scale = 1, voice, video = false }) {
-  return `<html lang="${lang}"${dirAttr(dir)} data-theme="${esc(theme)}" data-mode="${esc(mode)}" data-style="${esc(style)}"${scale === 1 ? "" : ` data-scale="${scale}"`}${voice ? ` data-voice="${esc(voice)}"` : ""}${video ? " data-video" : ""}>`;
+function rootTag({ lang, dir, theme, mode, style, scale = 1, docWidth = DOC_WIDTH.default, voice, video = false }) {
+  return `<html lang="${lang}"${dirAttr(dir)} data-theme="${esc(theme)}" data-mode="${esc(mode)}" data-style="${esc(style)}"${scale === 1 ? "" : ` data-scale="${scale}"`}${docWidth === DOC_WIDTH.default ? "" : ` data-doc-width="${docWidth}"`}${voice ? ` data-voice="${esc(voice)}"` : ""}${video ? " data-video" : ""}>`;
 }
 function rootCarrierAttrs({ lang, dir, theme, mode, style }) {
   return ` data-am-root-lang="${lang}"${dir === "rtl" ? ' data-am-root-dir="rtl"' : ""} data-am-root-theme="${esc(theme)}" data-am-root-mode="${esc(mode)}" data-am-root-style="${esc(style)}"`;
@@ -10343,6 +10350,7 @@ function readPage(html) {
     mode: attr("data-mode"),
     style: attr("data-style"),
     scale: readScale(attr("data-scale")),
+    docWidth: readDocWidth(attr("data-doc-width")),
     lang: attr("lang"),
     voice: attr("data-voice"),
     voiced: video && before.endsWith("</audio>") && before.lastIndexOf(AUDIO_OPEN) > before.lastIndexOf("<textarea")
@@ -10900,7 +10908,7 @@ var LintError = class extends Error {
     this.warnings = warnings;
   }
 };
-function renderDoc(source, overrides = {}, defaults2 = {}, { themes: themes2 = BUILTIN, previousLanguage, baseDir, codeDir, knownImages, knownCode, update: update2, closeAfter = false, colophon: colophon2 = true, scale = 1 } = {}) {
+function renderDoc(source, overrides = {}, defaults2 = {}, { themes: themes2 = BUILTIN, previousLanguage, baseDir, codeDir, knownImages, knownCode, update: update2, closeAfter = false, colophon: colophon2 = true, scale = 1, docWidth = DOC_WIDTH.default } = {}) {
   const choices = { theme: themes2.choices("page") };
   const { doc: parsed, errors } = parseDocLoose(source, { defaults: defaults2, choices });
   const meta = applyOverrides(parsed.meta, overrides, { ...CHOICES, ...choices });
@@ -10926,7 +10934,7 @@ function renderDoc(source, overrides = {}, defaults2 = {}, { themes: themes2 = B
   raiseAll(errors);
   const page = TEMPLATES[doc2.meta.template]({ meta: doc2.meta, introHtml, panels, ui, language });
   const body = language.dir === "rtl" ? isolateLtrRuns(page) : page;
-  const html = shell({ meta: doc2.meta, language, body, source, embedded: themes2.embedFor(doc2.meta.theme, "page"), update: update2, closeAfter, colophon: colophon2, scale });
+  const html = shell({ meta: doc2.meta, language, body, source, embedded: themes2.embedFor(doc2.meta.theme, "page"), update: update2, closeAfter, colophon: colophon2, scale, docWidth });
   return { html, warnings, stats, meta: doc2.meta, language };
 }
 function hasVisuals({ intro, panels }) {
@@ -11119,11 +11127,11 @@ function scaleButtons(ui) {
   const button = (action, label, text2) => `<button class="am-btn" type="button" data-am="${action}" ${range} aria-label="${esc(label)}" title="${esc(label)}" hidden>${text2}</button>`;
   return `${button("scale-down", ui.scale.down, "A\u2212")}${button("scale-up", ui.scale.up, "A+")}`;
 }
-function shell({ meta, language, body, source, embedded, update: update2, closeAfter, colophon: colophon2, scale }) {
+function shell({ meta, language, body, source, embedded, update: update2, closeAfter, colophon: colophon2, scale, docWidth }) {
   const { ui, labelKey } = language;
   const notice = updateNotice(ui, update2, labelKey);
   const pick = (name2, label, values, current) => `<label class="am-pick">${esc(label)}<select data-am="${name2}">${values.map(([value, text2]) => `<option value="${esc(value)}"${value === current ? " selected" : ""}>${esc(text2)}</option>`).join("")}</select></label>`;
-  const root = { lang: language.htmlLang, dir: language.dir, theme: meta.theme, mode: meta.mode, style: meta.style, scale };
+  const root = { lang: language.htmlLang, dir: language.dir, theme: meta.theme, mode: meta.mode, style: meta.style, scale, docWidth };
   const interactiveTable = body.includes("<table data-am-table=");
   const script = `
 ${RUNTIME_JS}${interactiveTable ? TABLE_JS : ""}${hasDelta(body) ? DELTA_JS : ""}${update2 ? UPDATE_JS : ""}${closeAfter ? CLOSE_AFTER_JS : ""}`;
@@ -11136,7 +11144,7 @@ ${cspMeta([script], { live: true })}
 <meta name="generator" content="Answer me with HTML ${VERSION}">
 <title>${esc(meta.title || "Answer me with HTML")}</title>
 <style>
-${pageCss(embedded, { diff: body.includes('class="am-codeblock am-codeblock--diff"'), delta: hasDelta(body), rtl: language.dir === "rtl", math: hasMath(body), chart: hasChart(body), table: interactiveTable, update: Boolean(update2), closeAfter, scale })}
+${pageCss(embedded, { diff: body.includes('class="am-codeblock am-codeblock--diff"'), delta: hasDelta(body), rtl: language.dir === "rtl", math: hasMath(body), chart: hasChart(body), table: interactiveTable, update: Boolean(update2), closeAfter, scale, docWidth })}
 </style>
 </head>
 <body>
@@ -11218,6 +11226,7 @@ var CONFIG_KEYS = Object.freeze({
   mode: { type: "enum", choices: CHOICES.mode, default: "auto", label: "Default light/dark mode" },
   style: { type: "enum", choices: CHOICES.style, default: "80", label: "STE writing-check strictness" },
   scale: { type: "number", min: SCALE.min, max: SCALE.max, step: SCALE.step, default: 1, label: "Text size on the page (1 = default, 1.2 = 20% larger; diagrams and charts grow with it)" },
+  doc_width: { type: "number", min: DOC_WIDTH.min, max: DOC_WIDTH.max, step: DOC_WIDTH.step, default: DOC_WIDTH.default, label: "Reading width of the doc template in px (916 = default; 1680 is as wide as the sheet template)" },
   update_check: { type: "bool", default: true, label: "Check for a new version once a day in the background and tell you (never updates by itself)" },
   close_after_reply: { type: "bool", default: false, label: "Close the page tab 3 seconds after the reply is copied (a Keep open button cancels it)" },
   colophon: { type: "bool", default: true, label: 'Show the "Generated by Answer me with HTML" line above the page title' },
@@ -14326,7 +14335,7 @@ async function cmdRender(src, opts, ctx, baseDir, from) {
   await loadMath(src);
   let result;
   try {
-    result = renderDoc(src, { theme: opts.theme, template: opts.template, style: opts.style, mode: opts.mode }, { theme, mode, style }, { themes: ctx.themes, baseDir, codeDir: ctx.io.cwd ?? process.cwd(), update: updateFor(config, ctx), closeAfter: config.values.close_after_reply, colophon: config.values.colophon, scale: config.values.scale });
+    result = renderDoc(src, { theme: opts.theme, template: opts.template, style: opts.style, mode: opts.mode }, { theme, mode, style }, { themes: ctx.themes, baseDir, codeDir: ctx.io.cwd ?? process.cwd(), update: updateFor(config, ctx), closeAfter: config.values.close_after_reply, colophon: config.values.colophon, scale: config.values.scale, docWidth: config.values.doc_width });
   } catch (e) {
     return reportDraftError(e, src, from, ctx);
   }
@@ -14563,7 +14572,7 @@ async function cmdPatch(htmlArg, fromArg, opts, ctx) {
       if (opts["audio-map"] === void 0 && !validVoice(voice, fail)) return 2;
       result = await buildVideo(patched, voice, { ...opts, theme: overrides.theme, mode: overrides.mode, style: overrides.style, previousLanguage: page.lang }, config, ctx);
     } else {
-      result = renderDoc(patched, overrides, { theme, mode, style }, { themes: ctx.themes, previousLanguage: page.lang, baseDir: cwd, codeDir: cwd, knownImages: readEmbeddedImages(html), knownCode: readEmbeddedCode(html), update: updateFor(config, ctx), closeAfter: config.values.close_after_reply, colophon: config.values.colophon, scale: page.scale });
+      result = renderDoc(patched, overrides, { theme, mode, style }, { themes: ctx.themes, previousLanguage: page.lang, baseDir: cwd, codeDir: cwd, knownImages: readEmbeddedImages(html), knownCode: readEmbeddedCode(html), update: updateFor(config, ctx), closeAfter: config.values.close_after_reply, colophon: config.values.colophon, scale: page.scale, docWidth: page.docWidth });
     }
   } catch (e) {
     if (e instanceof TtsError) {

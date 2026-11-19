@@ -541,7 +541,7 @@ body.am-has-reply-bar { padding-block-end: 72px; }
 }
 
 /* ── doc template ────────────────────────── */
-.am-doc { max-width: 916px; margin: 0 auto; padding: 40px 28px 64px; }
+.am-doc { max-width: var(--am-doc-max, 916px); margin: 0 auto; padding: 40px 28px 64px; }
 .am-doc-layout { position: relative; }
 /* The outline rail: a zero-height sticky strip whose child hangs 8px outside the body on the chosen side. "start" and "end" are
    logical, so the rail mirrors on a right-to-left page. data-flow says which way the label and the list open: "out" away from the

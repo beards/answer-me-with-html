@@ -2,6 +2,7 @@
 // render / video write the envelope here, patch reads it back with readPage. The format is defined only in this file.
 import { esc } from './svg/text.js';
 import { SCALE } from './themes/type-scale.js';
+import { DOC_WIDTH, readDocWidth } from './themes/doc-width.js';
 
 const SOURCE_OPEN = '<textarea id="am-source"';
 const SOURCE_RE = new RegExp(`^${SOURCE_OPEN}[^>]*>([\\s\\S]*?)<\\/textarea>`);
@@ -11,8 +12,9 @@ const AUDIO_OPEN = '<audio id="amv-audio"';
 // a left-to-right page keeps the root tag it always had.
 // voice is written only on voiced video pages (elevenlabs / local / cmd / system / audio-map); patch keeps the same voice.
 // scale is the reader's text size (src/themes/type-scale.js); 1 is the default, so the tag carries it only when it differs.
-export function rootTag({ lang, dir, theme, mode, style, scale = 1, voice, video = false }) {
-  return `<html lang="${lang}"${dirAttr(dir)} data-theme="${esc(theme)}" data-mode="${esc(mode)}" data-style="${esc(style)}"${scale === 1 ? '' : ` data-scale="${scale}"`}${voice ? ` data-voice="${esc(voice)}"` : ''}${video ? ' data-video' : ''}>`;
+// docWidth is the reading width of the doc template (src/themes/doc-width.js); the default is carried the same way, so patch keeps the width the page was made with.
+export function rootTag({ lang, dir, theme, mode, style, scale = 1, docWidth = DOC_WIDTH.default, voice, video = false }) {
+  return `<html lang="${lang}"${dirAttr(dir)} data-theme="${esc(theme)}" data-mode="${esc(mode)}" data-style="${esc(style)}"${scale === 1 ? '' : ` data-scale="${scale}"`}${docWidth === DOC_WIDTH.default ? '' : ` data-doc-width="${docWidth}"`}${voice ? ` data-voice="${esc(voice)}"` : ''}${video ? ' data-video' : ''}>`;
 }
 
 // Copies of the root settings, written on the toolbar. A host that serves the page inside its own document leaves the real <html>
@@ -32,8 +34,8 @@ export function sourceTag(source) {
   return `${SOURCE_OPEN} hidden readonly aria-hidden="true">${esc(source)}</textarea>`;
 }
 
-// Read the envelope back: { source, video, template, theme, mode, style, scale, lang, voice, voiced }. source is null when there is no source draft.
-// scale is 1 when the tag has none (an older page) or names a value outside the range.
+// Read the envelope back: { source, video, template, theme, mode, style, scale, docWidth, lang, voice, voiced }. source is null when there is no source draft.
+// scale is 1, and docWidth the doc default, when the tag has none (an older page) or names a value outside the range.
 // The body html / markdown may contain tags with the same names, so: settings come only from the document-root <html>,
 // the source only from the final textarea, the voice only from the audio right before the source.
 export function readPage(html) {
@@ -53,6 +55,7 @@ export function readPage(html) {
     mode: attr('data-mode'),
     style: attr('data-style'),
     scale: readScale(attr('data-scale')),
+    docWidth: readDocWidth(attr('data-doc-width')),
     lang: attr('lang'),
     voice: attr('data-voice'),
     voiced: video && before.endsWith('</audio>') && before.lastIndexOf(AUDIO_OPEN) > before.lastIndexOf('<textarea'),
